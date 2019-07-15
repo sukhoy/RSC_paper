@@ -1,0 +1,17 @@
+*.aux
+*.idx
+*.log
+*.toc
+*.ist
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.out
+article.pdf
+article.fls
+article.fdb_latexmk
+*.cpt
+RSC_paper_env
+.envrc
+metadata.tex
