@@ -8,7 +8,6 @@
 *.bcf
 *.run.xml
 *.out
-article.pdf
 article.fls
 article.fdb_latexmk
 *.cpt
