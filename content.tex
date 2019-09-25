@@ -18,8 +18,8 @@ that implements randomized learning algorithms based on support vector
 machines\supercite{vapnik1998statistical}. The proposed approach solves these
 problems by using a cross-platform PRNG and by making the PRNG state private
 in each thread. The cross-validation results obtained with the modified
-version of LIBLINEAR were the same across platforms. Furthermore, the
-parallelized cross-validation results were no longer affected by random
+version of LIBLINEAR are the same across platforms. Furthermore, the
+parallelized cross-validation results are no longer affected by random
 fluctuations arising from the sharing of the PRNG state by parallel threads.
 
 
@@ -41,7 +41,7 @@ implementations, or the computing environments in which they run. This paper
 describes a technique that eliminates two intrinsic problems that may impede
 the reproducibility of cross-validation results for randomized learning algorithms.
 The first problem stems from using a platform-dependent pseudo-random number
-generator~(PRNG). The second problem is due to sharing the PRNG state by
+generator~(PRNG). The second problem is due to sharing of the PRNG state by
 parallel threads.
 
 \smallskip
@@ -189,12 +189,14 @@ thread-safe~\citepalias[\mbox{,} p.~1767]{posix7}.
 
 \smallskip
 The proposed technique solves the first reproducibility problem by replacing a
-platform-dependent PRNG with a cross-platform PRNG. In the experiments we used
+platform-dependent PRNG with a cross-platform PRNG. In the experiments, we used
 the SIMD-oriented Fast Mersenne Twister~(SFMT) library\supercite{saito2008simd},
 but the approach should work with any cross-platform~PRNG. The second
 reproducibility problem was solved by re-seeding the PRNG in each thread before
 each repetition and holding the PRNG state variables in thread-local
-storage~(TLS).
+storage~(TLS). These modifications do not require synchronizing the PRNG calls
+in parallel threads. That is, they don't reduce the scalability of
+parallelized CV.
 
 \smallskip
 This technique was evaluated by modifying LIBLINEAR\supercite{fan2008liblinear},
@@ -244,15 +246,13 @@ The next section describes how to apply this recipe to the LIBLINEAR library.
 \label{sec:LL-mods}
 
 This section describes how to patch LIBLINEAR (version~2.21) to ensure CV
-reproducibility.
-This version of the patch assumes that a modern gcc-like compiler is used
-(e.g., a recent version of gcc or clang).
-The patch replaces all calls to
-\texttt{rand()} with a different PRNG based on
-the SFMT library\supercite{saito2008simd}.
-The first five steps ensure that the cross-validation results are reproducible
-across platforms. The last step makes it possible to parallelize the
-cross-validation using multiple threads while preserving reproducibility.
+reproducibility. This version of the patch assumes that a modern compiler is
+used (i.e., GCC~4.2 and later or LLVM/Clang~3.9 and later). The patch replaces
+all calls to \texttt{rand()} with a different PRNG based on the SFMT
+library\supercite{saito2008simd}. The first five steps ensure that the
+cross-validation results are reproducible across platforms. The last step makes
+it possible to parallelize the cross-validation using multiple threads while
+preserving reproducibility.
 \begin{enumerate}
 \item Create a sub-directory called \verb|SFMT| in the top-level LIBLINEAR
   directory and unpack the SFMT library there (we used SFMT
@@ -336,25 +336,25 @@ options, e.g., by adding \verb|-f openmp| to the \verb|CFLAGS| variable.
       & 96.858
       & 96.883
       & 96.952
-      & 96.912
-      & 96.903
-      & 96.932
+      & \bf 96.912
+      & \bf 96.903
+      & \bf 96.932
         \tabularnewline
-        MacOS
+        macOS
       & 96.883
       & 96.828
       & 96.927
-      & 96.912
-      & 96.903
-      & 96.932
+      & \bf 96.912
+      & \bf 96.903
+      & \bf 96.932
         \tabularnewline
         Windows
       & 96.858
       & 96.749
       & 96.799
-      & 96.912
-      & 96.903
-      & 96.932
+      & \bf 96.912
+      & \bf 96.903
+      & \bf 96.932
         \tabularnewline
         \hline
     \end{tabular}}
@@ -381,29 +381,29 @@ options, e.g., by adding \verb|-f openmp| to the \verb|CFLAGS| variable.
       & \multicolumn{1}{c|}{20 Folds}
         \tabularnewline
         \hline
-        MacOS
-      & 96.883 (0.0037)
-      & 96.830 (0.0035)
-      & 96.923 (0.0031)
-      & 96.912 (0)
-      & 96.903 (0)
-      & 96.932 (0)
-        \tabularnewline
         Linux
       & 96.861 (0.0062)
       & 96.873 (0.0037)
       & 96.951 (0.0082)
-      & 96.912 (0)
-      & 96.903 (0)
-      & 96.932 (0)
+      & \bf 96.912 (0)
+      & \bf 96.903 (0)
+      & \bf 96.932 (0)
+        \tabularnewline
+        macOS
+      & 96.883 (0.0037)
+      & 96.830 (0.0035)
+      & 96.923 (0.0031)
+      & \bf 96.912 (0)
+      & \bf 96.903 (0)
+      & \bf 96.932 (0)
         \tabularnewline
         Windows
       & 96.863 (0)
       & 96.759 (0)
       & 96.804 (0)
-      & 96.912 (0)
-      & 96.903 (0)
-      & 96.932 (0)
+      & \bf 96.912 (0)
+      & \bf 96.903 (0)
+      & \bf 96.932 (0)
         \tabularnewline
         \hline
         \end{tabular}}
@@ -417,21 +417,22 @@ Table~\ref{tbl:RCV1-results-serial} compares the cross-validated
 accuracies for the \verb|rcv1_train| data~set\supercite{lewis2004rcv1}.
 These results were obtained using LIBLINEAR-2.21 and its patched version
 described in the previous section (excluding step~6). The results are shown for three platforms:
-1)~Linux (32 cores, RedHat~4.4.7-18 with gcc~4.4.7), \mbox{2) MacOS X} (4 cores,
+1)~Linux (32 cores, RedHat~4.4.7-18 with GCC~4.4.7), \mbox{2) macOS X} (4 cores,
 version~10.13.6 with Xcode~10.1), and \mbox{3) Windows} (2 cores, version 10
-with Visual Studio~2017). The results show that the modified version of
-the library produced the same cross-validation results on all three platforms.
+with Visual Studio~2017). The results (shown in \textbf{bold}) imply that the
+ modified version of the library produced the same cross-validation results on
+ all three platforms.
 
 \smallskip
-Table~\ref{tbl:RCV1-results-parallel} shows the accuracy statistics when the CV
-was parallelized. To enable parallel processing, the original
-version of LIBLINEAR was patched using only step~6 from Section~\ref{sec:LL-mods};
-the PRNG remained unchanged. The modified
-version was patched using all six steps.
-The table shows that random fluctuations
-are introduced by parallelization and that the proposed technique eliminates
-them (i.e., the standard deviation is zero).
-The results in both tables were obtained using the following command line:
+Table~\ref{tbl:RCV1-results-parallel} shows the accuracy statistics for the
+parallelized CV. To enable parallel processing, the original version of
+LIBLINEAR was patched using only step~6 from Section~\ref{sec:LL-mods}; the PRNG
+remained unchanged. The modified version was patched using all six steps
+from Section~\ref{sec:LL-mods} and the results with this version are shown in
+\textbf{bold}. The table shows that random fluctuations are introduced by
+parallelization and that the proposed technique eliminates them (i.e., the
+standard deviation is zero). The results in both tables were obtained using the
+following command line:
 \begin{Verbatim}[fontsize=\small]
 $ train -c 4 -e 0.1 -v <n_folds> rcv1_train.binary
 \end{Verbatim}
@@ -441,14 +442,15 @@ where {\small\verb|<n_folds>|} specified the number of folds, i.e., 5, 10, or 20
 On Windows, the PRNG
 state in Visual Studio is already thread-local, which prevented fluctuations
 (see the last row of Table~\ref{tbl:RCV1-results-parallel}).
-Without re-seeding the PRNGs, however,
-the results still depend on the number of threads~$T$.
-To show this, we performed another experiment that varied~$T$ from~$1$
-to the number of folds~$N$, where $N$ was set to 5, 10, and 20.
-The results in terms of average and standard deviation (in \%) were as follows:
+Without re-seeding the PRNGs, however, the results still depend on the number of
+threads~$T$. To show this, we performed another experiment on Windows that used
+only step 6 from Section~\ref{sec:LL-mods} and also varied~$T$ from~$1$ to the
+number of folds~$N$, where $N$ was set to 5, 10, and 20. The results in terms of
+average and standard deviation (in \%) were as follows:
 96.860~(0.0044) for 5-fold CV; 96.760~(0.0068) for 10-fold CV, and
-96.800~(0.0043) for 20-fold CV. In contrast, the results with the modified
-version depend on~$N$ but not on~$T$.
+96.800~(0.0043) for 20-fold CV. Table~\ref{tbl:RCV1-results-parallel} shows that
+the results with the modified version (i.e., with all six steps)
+depend on~$N$ but not on~$T$.
 
 
 
@@ -458,8 +460,8 @@ This paper described a technique that solves intrinsic
 reproducibility problems of randomized learning algorithms that stem from:
 1)~using a platform-dependent PRNG; and 2)~sharing the PRNG state across parallel
 threads.
-A recipe for patching parallelized cross-validation was also described and
-applied to LIBLINEAR, which is a popular machine learning
-library. Using this patch, the CV results became
-reproducible on three different platforms and the random fluctuations arising
-from PRNG state sharing were eliminated.
+A recipe for patching parallelized cross-validation was described for LIBLINEAR,
+which is a popular machine learning library. After applying this patch to
+LIBLINEAR, the CV results became reproducible on three different platforms, i.e.,
+Linux, macOS, and Windows, because the random fluctuations arising from PRNG
+state sharing were eliminated.

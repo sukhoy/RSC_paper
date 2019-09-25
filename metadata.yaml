@@ -5,8 +5,9 @@
 #  - For a successful replication, it should be prefixed with "[Re]"
 #  - For a failed replication, it should be prefixed with "[-Re]"
 #  - For other article types, no instruction (but please, not too long)
-title: "Eliminating the Variability of Cross-Validation Results for Some
-Randomized and Parallelized Learning Algorithms"
+title: "Eliminating the Variability of Cross-Validation Results with LIBLINEAR
+due to Randomization and Parallelization"
+
 
 # List of authors with name, orcid number, email and affiliation
 # Affiliation "*" means contact author
