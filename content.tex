@@ -253,20 +253,23 @@ library\supercite{saito2008simd}. The first five steps ensure that the
 cross-validation results are reproducible across platforms. The last step makes
 it possible to parallelize the cross-validation using multiple threads while
 preserving reproducibility.
+\vspace*{-4.5mm}
 \begin{enumerate}
 \item Create a sub-directory called \verb|SFMT| in the top-level LIBLINEAR
   directory and unpack the SFMT library there (we used SFMT
   v.~1.5.1). Then, compile it as follows:
+\vspace*{-5mm}
 \begin{Verbatim}[fontsize=\small]
 $ cc -c -fPIC -DSFMT_MEXP=19937 SFMT.c
 \end{Verbatim}
+\vspace*{-2mm}
 \item Extend LIBLINEAR's \verb|Makefile| to link it with SFMT by inserting the
   following line before the line that starts with \verb|all:|
 \begin{Verbatim}[fontsize=\small]
 override LIBS += SFMT/SFMT.o
 \end{Verbatim}
 \item Redirect all \verb|rand()| calls to its SFMT-based replacement using
-  the C/C++ preprocessor so that each thread uses a local private PRNG state. This can be done by inserting the following snippet after all
+  the C/C++ preprocessor so that each thread uses a local private PRNG state by inserting the following snippet after all
   \verb|#include| directives at the beginning of~\verb|linear.cpp|:
 \begin{Verbatim}[fontsize=\small]
 #include "SFMT/SFMT.h"
@@ -299,6 +302,8 @@ void seed_liblinear_PRNG(int seed);
         for(i=0;i<nr_fold;i++)
         {
                 seed_liblinear_PRNG(default_sfmt_seed);
+                ...
+        }
 \end{Verbatim}
 \item To enable parallel processing, use OpenMP~\citepalias{openmp08} to distribute
   the fold combinations to the worker threads by adding the following \verb|#pragma|
